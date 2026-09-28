@@ -1,0 +1,1273 @@
+<!DOCTYPE html>
+<!-- saved from url=(0081)file:///C:/Users/%EA%B9%80%EC%9C%A4%EC%B1%84/Downloads/ai_studio_code%20(53).html -->
+<html lang="ko"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>수능 정복 RPG v2.6 (UI Unified)</title>
+    <style>
+        :root {
+            --primary: #4a90e2;
+            --success: #2ecc71;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+            --bg: #f0f2f5;
+            --card: #ffffff;
+            --text: #2c3e50;
+            --math: #3498db;
+            --kor: #e67e22;
+            --eng: #9b59b6;
+            --bio: #27ae60;
+            --earth: #7f8c8d;
+            --gray: #95a5a6;
+            --overlay: rgba(0,0,0,0.6);
+        }
+
+        body {
+            font-family: 'Pretendard', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0; padding: 0;
+            display: flex; justify-content: center;
+        }
+
+        #app {
+            width: 100%; max-width: 600px; min-height: 100vh;
+            display: flex; flex-direction: column;
+            padding-bottom: 90px;
+        }
+
+        header {
+            background: white; padding: 20px;
+            border-radius: 0 0 20px 20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            position: sticky; top: 0; z-index: 100;
+        }
+
+        .user-profile { display: flex; align-items: center; gap: 15px; }
+        .level-circle {
+            background: var(--primary); color: white;
+            width: 50px; height: 50px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: bold; font-size: 1.2rem;
+        }
+        .user-info { flex-grow: 1; }
+        .user-title { font-size: 0.8rem; color: var(--warning); font-weight: bold; }
+        
+        .exp-container {
+            background: #eee; height: 10px; border-radius: 5px;
+            margin-top: 10px; overflow: hidden;
+        }
+        #exp-bar { background: var(--primary); height: 100%; width: 0%; transition: 0.3s; }
+
+        .top-stats {
+            display: flex; justify-content: space-between;
+            margin-top: 10px; font-size: 0.9rem; font-weight: bold;
+        }
+
+        /* 공통 탭/카드 스타일 */
+        .tab-content { display: none; padding: 20px; animation: fadeIn 0.2s; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .controls { display: flex; gap: 10px; margin-bottom: 15px; }
+        .controls select { flex: 1; padding: 8px; border-radius: 8px; border: 1px solid #ddd; font-family: inherit; }
+
+        /* 카드 공통 디자인 */
+        .quest-card, .insight-card, .mindset-card, .mock-card {
+            background: white; padding: 18px; border-radius: 15px;
+            margin-bottom: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            position: relative; transition: 0.3s;
+        }
+        .quest-card.completed-today { opacity: 0.7; background: #fdfdfd; }
+        
+        /* 렌더링 성능 최적화 */
+        .insight-card, .mock-card {
+            content-visibility: auto;
+            contain-intrinsic-size: 120px;
+        }
+        
+        /* 마음가짐 패널 특화 */
+        .mindset-card { border-left: 5px solid var(--warning); }
+        .mindset-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+        .mindset-header h3 { margin: 0; font-size: 1rem; color: var(--text); }
+        .mindset-content { margin-top: 15px; display: none; border-top: 1px dashed #eee; padding-top: 15px; }
+        .mindset-content.active { display: block; }
+        
+        .mantra-display {
+            background: #fff9db; padding: 12px; border-radius: 10px;
+            font-size: 0.9rem; font-weight: bold; color: #e67e22;
+            margin-bottom: 15px; text-align: center; border: 1px solid #ffe066;
+            word-break: break-all;
+        }
+
+        .pre-check-item {
+            display: flex; align-items: center; gap: 10px; margin-bottom: 8px;
+            background: #f8f9fa; padding: 10px; border-radius: 8px;
+        }
+        .pre-check-item input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--warning); cursor: pointer; }
+        .pre-check-item span { flex: 1; font-size: 0.9rem; cursor: pointer; word-break: break-all; }
+        .pre-check-item.checked span { text-decoration: line-through; color: #adb5bd; }
+
+        /* 퀘스트 헤더/태그 */
+        .quest-header, .insight-header, .mock-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+        .subject-tag { padding: 2px 8px; border-radius: 5px; color: white; font-size: 0.7rem; font-weight: bold; }
+        .quest-title { font-weight: bold; font-size: 1rem; word-break: break-all; margin-bottom: 4px; line-height: 1.4; }
+        .quest-meta, .insight-meta, .mock-meta { font-size: 0.8rem; color: #888; }
+
+        /* 진행도 및 스탬프 */
+        .progress-section {
+            margin: 15px 0; background: #f8faff; padding: 12px; border-radius: 12px;
+            border: 1px solid #edf2f7;
+        }
+        .progress-header { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 8px; font-weight: bold; }
+        .stamp-grid { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+        .stamp { width: 20px; height: 20px; border-radius: 50%; border: 2px solid #ddd; transition: 0.3s; }
+        .stamp.filled { border-color: transparent; box-shadow: inset 0 0 5px rgba(0,0,0,0.1); }
+        .total-solved { font-size: 0.75rem; color: var(--gray); margin-top: 4px; }
+
+        /* 버튼 시스템 */
+        button { cursor: pointer; border: none; font-family: inherit; transition: 0.2s; }
+        .btn-sm { padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; font-weight: bold; }
+        .btn-main { padding: 12px; border-radius: 10px; background: var(--primary); color: white; font-weight: bold; font-size: 1rem; width: 100%; }
+        .btn-complete { background: var(--success); color: white; }
+        .btn-complete:disabled { background: var(--gray); cursor: not-allowed; }
+        .btn-stamp { background: var(--primary); color: white; padding: 6px 15px; border-radius: 8px; font-size: 0.85rem; }
+        .btn-stamp:disabled { background: #cbd5e0; cursor: not-allowed; }
+        .btn-edit { background: #eee; color: var(--text); }
+        .btn-archive { background: #fdf2e9; color: #d35400; border: 1px solid #f8c471; }
+        .btn-del { background: #fee; color: var(--danger); }
+        .btn-save { background: var(--primary); color: white; }
+        .btn-cancel { background: var(--gray); color: white; }
+
+        /* 입력창 스타일 */
+        .input-box, .edit-form { 
+            background: white; padding: 20px; border-radius: 15px; 
+            margin-bottom: 20px; display: flex; flex-direction: column; gap: 10px; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
+        }
+        select, input, textarea { padding: 12px; border-radius: 10px; border: 1px solid #ddd; font-size: 1rem; font-family: inherit; outline: none; }
+        textarea { resize: vertical; }
+
+        /* 상점 및 통계 UI */
+        .shop-item { background: white; padding: 15px; border-radius: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .stat-bar-row { margin-bottom: 15px; }
+        .stat-label { display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 5px; }
+        .stat-bar-bg { background: #eee; height: 15px; border-radius: 10px; overflow: hidden; }
+        .stat-bar-fill { height: 100%; transition: 1s; }
+
+        /* 하단 네비게이션 */
+        nav {
+            position: fixed; bottom: 0; width: 100%; max-width: 600px;
+            background: white; display: flex; justify-content: space-around;
+            padding: 10px 0; border-top: 1px solid #ddd; z-index: 100;
+        }
+        nav button { background: none; border: none; font-size: 1.1rem; display: flex; flex-direction: column; align-items: center; color: #7f8c8d; flex: 1; }
+        nav button.active { color: var(--primary); }
+        nav button span { font-size: 0.65rem; margin-top: 4px; font-weight: bold; }
+
+        /* 모달 및 토스트 */
+        #modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--overlay); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-content { background: white; width: 90%; max-width: 500px; max-height: 80vh; border-radius: 20px; overflow-y: auto; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+        .modal-header { font-size: 1.2rem; font-weight: bold; color: var(--primary); margin-bottom: 15px; }
+        
+        #toast-container { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); z-index: 1000; pointer-events: none; }
+        .toast { background: rgba(44, 62, 80, 0.9); color: white; padding: 12px 25px; border-radius: 30px; margin-top: 10px; font-weight: bold; animation: slideUpFade 2.5s ease-out forwards; text-align: center; }
+        @keyframes slideUpFade { 0% { opacity: 0; transform: translateY(20px); } 15% { opacity: 1; transform: translateY(0); } 85% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-20px); } }
+    </style>
+</head>
+<body>
+
+<div id="app">
+    <div id="toast-container"></div>
+
+    <!-- 복습 모달 -->
+    <div id="modal-overlay">
+        <div class="modal-content">
+            <div id="modal-body"></div>
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button id="modal-complete-btn" class="btn-main" style="flex: 1;">복습 완료</button>
+                <button onclick="closeReviewModal()" class="btn-main" style="flex: 1; background: var(--gray);">닫기</button>
+            </div>
+        </div>
+    </div>
+
+    <header>
+        <div class="user-profile">
+            <div class="level-circle" id="lv-display">1</div>
+            <div class="user-info">
+                <div class="user-title" id="current-title">초보 수험생</div>
+                <div style="font-weight: bold; font-size: 1.1rem;">수능 정복자</div>
+            </div>
+            <div style="text-align: right;">
+                <div id="streak-display" style="font-weight: bold; font-size: 0.9rem;">🔥 0일째</div>
+            </div>
+        </div>
+        <div class="exp-container">
+            <div id="exp-bar" style="width: 0%;"></div>
+        </div>
+        <div class="top-stats">
+            <span>EXP <span id="exp-text">0/100</span></span>
+            <span>💰 <span id="coin-display">0</span></span>
+        </div>
+    </header>
+
+    <!-- 마음가짐 패널 -->
+    <div class="mindset-card" id="mindset-panel-root" style="display: none;">
+        <div class="mindset-header" onclick="toggleMindset()">
+            <h3>🧘 공부 시작 전 마음가짐 <span id="mindset-status" style="font-size: 0.75rem; color: var(--gray); font-weight: normal; margin-left: 5px;">(열기)</span></h3>
+            <span id="mindset-arrow" style="font-size: 0.8rem; color: var(--gray);">▼</span>
+        </div>
+        <div class="mindset-content" id="mindset-content">
+            <div id="mantra-area" class="mantra-display">오늘도 나 자신을 믿고 몰입하자!</div>
+            <div id="pre-checklist-area">
+            <div class="pre-check-item ">
+                <input type="checkbox" onchange="togglePreItem(1788791808053)">
+                <span onclick="editPreItem(1788791808053)">휴대폰 비행기모드로 전환</span>
+                <button onclick="deletePreItem(1788791808053)" style="background:none; color:var(--danger); font-size:1.2rem; padding:0 5px;">×</button>
+            </div>
+        
+            <div class="pre-check-item ">
+                <input type="checkbox" onchange="togglePreItem(1788791808054)">
+                <span onclick="editPreItem(1788791808054)">복잡한 생각은 메모해두고 판단 보류하기</span>
+                <button onclick="deletePreItem(1788791808054)" style="background:none; color:var(--danger); font-size:1.2rem; padding:0 5px;">×</button>
+            </div>
+        
+            <div class="pre-check-item ">
+                <input type="checkbox" onchange="togglePreItem(1788791808055)">
+                <span onclick="editPreItem(1788791808055)">지쳤다면 -&gt; 15분 산책하기</span>
+                <button onclick="deletePreItem(1788791808055)" style="background:none; color:var(--danger); font-size:1.2rem; padding:0 5px;">×</button>
+            </div>
+        
+            <div class="pre-check-item ">
+                <input type="checkbox" onchange="togglePreItem(1788791808056)">
+                <span onclick="editPreItem(1788791808056)">머리가 안 돌아가면 -&gt; 5분간 벽 보고 멍때리기</span>
+                <button onclick="deletePreItem(1788791808056)" style="background:none; color:var(--danger); font-size:1.2rem; padding:0 5px;">×</button>
+            </div>
+        </div>
+            <div style="margin-top: 15px; border-top: 1px solid #eee; padding-top: 15px;">
+                <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                    <input type="text" id="new-pre-item" placeholder="체크 항목 추가..." style="flex: 1; padding: 10px; font-size: 0.9rem;">
+                    <button class="btn-main" onclick="addPreItem()" style="width: auto; padding: 0 15px;">추가</button>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <label style="font-size: 0.75rem; font-weight: bold; color: var(--gray); margin-left: 5px;">💡 한 줄 다짐 (Mantra)</label>
+                        <input type="text" id="mantra-input" onchange="saveMindset()" placeholder="나를 깨우는 한 문장...">
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <label style="font-size: 0.75rem; font-weight: bold; color: var(--gray); margin-left: 5px;">📝 전략 메모</label>
+                        <textarea id="mindset-memo" rows="2" onchange="saveMindset()" placeholder="오늘의 멘탈 관리 전략..."></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 탭 1: 퀘스트 -->
+    <section id="tab-quests" class="tab-content">
+        <div class="input-box">
+            <input type="text" id="q-input" placeholder="새로운 퀘스트를 입력하세요">
+            <div style="display: flex; gap: 8px;">
+                <select id="q-subject" style="flex: 1.5;">
+                    <option value="국어">국어</option>
+                    <option value="수학">수학</option>
+                    <option value="영어">영어</option>
+                    <option value="생명">생명</option>
+                    <option value="지구">지구</option>
+                </select>
+                <select id="q-diff" style="flex: 1;">
+                    <option value="40">A (40XP)</option>
+                    <option value="20" selected="">B (20XP)</option>
+                    <option value="10">C (10XP)</option>
+                </select>
+            </div>
+            <input type="number" id="q-target" placeholder="오늘 목표 문제 수 (선택사항)">
+            <input type="number" id="q-timelimit" placeholder="제한 시간(분, 선택사항)">
+            <button class="btn-main" onclick="addQuest()">퀘스트 등록</button>
+        </div>
+        <div class="controls">
+            <select id="sort-select" onchange="renderQuests()">
+                <option value="default">미완료 우선 정렬</option>
+                <option value="newest">최신 추가순</option>
+                <option value="title">제목순</option>
+                <option value="subject">과목순</option>
+            </select>
+        </div>
+        <div id="quest-list"></div>
+
+        <!-- A. 퀘스트 보관함 영역 -->
+        <div class="archive-section" style="margin-top: 20px;">
+            <div class="mindset-header" onclick="toggleArchive()" style="background: white; padding: 14px 18px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                <h3 style="margin: 0; font-size: 0.95rem; color: var(--text);">📦 보관함 (<span id="archive-count">0</span>)</h3>
+                <span id="archive-arrow" style="font-size: 0.8rem; color: var(--gray);">▲</span>
+            </div>
+            <div id="archive-list" style="display: block; margin-top: 12px;"><div style="text-align:center; padding:20px; color:var(--gray); font-size:0.85rem; background:white; border-radius:12px;">보관된 퀘스트가 없습니다.</div></div>
+        </div>
+    </section>
+
+    <!-- 탭 2: 깨달음 노트 -->
+    <section id="tab-notes" class="tab-content">
+        <div class="input-box">
+            <h3 style="margin: 0; font-size: 1.1rem;">📝 오늘의 깨달음 기록</h3>
+            <select id="insight-subject-input">
+                <option value="국어">국어</option>
+                <option value="수학">수학</option>
+                <option value="영어">영어</option>
+                <option value="생명">생명</option>
+                <option value="지구">지구</option>
+            </select>
+            <textarea id="insight-text-input" rows="3" placeholder="오답 원인, 학습 포인트 등을 기록하세요." oninput="handleInsightInput()"></textarea>
+            <button class="btn-main" onclick="addInsight()">기록 저장</button>
+        </div>
+        <div class="controls">
+            <select id="insight-filter-subject" onchange="handleInsightFilterChange()">
+                <option value="전체">모든 과목</option>
+                <option value="국어">국어</option>
+                <option value="수학">수학</option>
+                <option value="영어">영어</option>
+                <option value="생명">생명</option>
+                <option value="지구">지구</option>
+            </select>
+            <button class="btn-sm btn-edit" style="flex:0.5" onclick="openWeeklyReview(true)">📅 주간 복습</button>
+        </div>
+        <div id="insight-list"><div style="text-align:center; padding:40px; color:var(--gray); font-size:0.9rem;">아직 기록이 없습니다.</div></div>
+        <div id="insight-more-container" style="text-align: center; margin-top: 10px; display: none;">
+            <button class="btn-sm btn-edit" style="width: 100%; padding: 10px;" onclick="loadMoreInsights()">더 보기</button>
+        </div>
+    </section>
+
+    <!-- 탭 3: 모의고사 기록 -->
+    <section id="tab-mock" class="tab-content">
+        <div class="input-box">
+            <h3 style="margin: 0; font-size: 1.1rem;">📈 모의고사 성적표</h3>
+            <input type="text" id="mock-name" placeholder="모의고사 이름 (예: 6월 모평)">
+            <div style="display: flex; gap: 8px;">
+                <input type="date" id="mock-date" style="flex: 1.5;">
+                <input type="number" id="mock-score" placeholder="점수" style="flex: 1;">
+            </div>
+            <textarea id="mock-review" rows="3" placeholder="시험 운영 및 오답 분석 총평"></textarea>
+            <button class="btn-main" onclick="addMockExam()">기록 추가</button>
+        </div>
+        <div id="mock-list"><div style="text-align:center; padding:40px; color:var(--gray); font-size:0.9rem;">기록된 모의고사가 없습니다.</div></div>
+    </section>
+
+    <!-- 탭 4: 상점 -->
+    <section id="tab-shop" class="tab-content">
+        <h2 style="margin-top: 0; font-size: 1.2rem;">🛒 칭호 상점</h2>
+        <div id="shop-list"><div class="shop-item">
+                <div><div style="font-weight:bold;">잠만보</div><div style="font-size:0.8rem; color:#888;">💰 100</div></div>
+                <button class="btn-sm btn-save" style="background:var(--primary)" onclick="buyTitle('잠만보', 100)">
+                    구매하기
+                </button>
+            </div><div class="shop-item">
+                <div><div style="font-weight:bold;">기출 마스터</div><div style="font-size:0.8rem; color:#888;">💰 300</div></div>
+                <button class="btn-sm btn-save" style="background:var(--primary)" onclick="buyTitle('기출 마스터', 300)">
+                    구매하기
+                </button>
+            </div><div class="shop-item">
+                <div><div style="font-weight:bold;">오답의 신</div><div style="font-size:0.8rem; color:#888;">💰 500</div></div>
+                <button class="btn-sm btn-save" style="background:var(--primary)" onclick="buyTitle('오답의 신', 500)">
+                    구매하기
+                </button>
+            </div><div class="shop-item">
+                <div><div style="font-weight:bold;">수능 정복자</div><div style="font-size:0.8rem; color:#888;">💰 1000</div></div>
+                <button class="btn-sm btn-save" style="background:var(--primary)" onclick="buyTitle('수능 정복자', 1000)">
+                    구매하기
+                </button>
+            </div><div class="shop-item">
+                <div><div style="font-weight:bold;">의대생 포스</div><div style="font-size:0.8rem; color:#888;">💰 2000</div></div>
+                <button class="btn-sm btn-save" style="background:var(--primary)" onclick="buyTitle('의대생 포스', 2000)">
+                    구매하기
+                </button>
+            </div></div>
+    </section>
+
+    <!-- 탭 5: 통계 -->
+    <section id="tab-stats" class="tab-content active">
+        <h2 style="margin-top: 0; font-size: 1.2rem;">📊 과목별 통계</h2>
+        <div id="stat-bars"><div class="stat-bar-row">
+                <div class="stat-label"><span>국어</span><span>0회</span></div>
+                <div class="stat-bar-bg"><div class="stat-bar-fill" style="width:0%; background:var(--kor)"></div></div>
+            </div><div class="stat-bar-row">
+                <div class="stat-label"><span>수학</span><span>0회</span></div>
+                <div class="stat-bar-bg"><div class="stat-bar-fill" style="width:0%; background:var(--math)"></div></div>
+            </div><div class="stat-bar-row">
+                <div class="stat-label"><span>영어</span><span>0회</span></div>
+                <div class="stat-bar-bg"><div class="stat-bar-fill" style="width:0%; background:var(--eng)"></div></div>
+            </div><div class="stat-bar-row">
+                <div class="stat-label"><span>생명</span><span>0회</span></div>
+                <div class="stat-bar-bg"><div class="stat-bar-fill" style="width:0%; background:var(--bio)"></div></div>
+            </div><div class="stat-bar-row">
+                <div class="stat-label"><span>지구</span><span>0회</span></div>
+                <div class="stat-bar-bg"><div class="stat-bar-fill" style="width:0%; background:var(--earth)"></div></div>
+            </div></div>
+        <hr style="border: 0; border-top: 1px solid #ddd; margin: 25px 0;">
+        <h3 style="font-size: 1.1rem;">🕒 최근 기록</h3>
+        <div id="history-list" style="margin-bottom: 30px;"></div>
+        
+        <div class="settings-group" style="background: white; padding: 20px; border-radius: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+            <h3 style="margin-top: 0; font-size: 1rem;">⚙️ 데이터 관리</h3>
+            <button class="btn-edit" onclick="exportData()" style="width:100%; margin-bottom:8px; padding:12px; text-align: left; border-radius: 10px;">💾 데이터 백업 (JSON)</button>
+            <button class="btn-edit" onclick="importData()" style="width:100%; margin-bottom:8px; padding:12px; text-align: left; border-radius: 10px;">📂 데이터 복원 (파일 선택)</button>
+            <input type="file" id="import-file" style="display:none" accept=".json">
+            <button onclick="resetGame()" style="width:100%; padding:12px; text-align: left; border-radius: 10px; background: #fff0f0; color: var(--danger); font-weight: bold; border: 1px solid #fee;">⚠️ 데이터 초기화</button>
+        </div>
+    </section>
+
+    <nav>
+        <button onclick="showTab('quests')" class="nav-btn" id="nav-quests">⚔️<span>퀘스트</span></button>
+        <button onclick="showTab('notes')" class="nav-btn" id="nav-notes">📝<span>노트</span></button>
+        <button onclick="showTab('mock')" class="nav-btn" id="nav-mock">📈<span>모의고사</span></button>
+        <button onclick="showTab('shop')" class="nav-btn" id="nav-shop">🛒<span>상점</span></button>
+        <button onclick="showTab('stats')" class="nav-btn active" id="nav-stats">📊<span>통계</span></button>
+    </nav>
+</div>
+
+<script>
+    const SUBJECT_COLORS = { "국어": "var(--kor)", "수학": "var(--math)", "영어": "var(--eng)", "생명": "var(--bio)", "지구": "var(--earth)" };
+    const SHOP_ITEMS = [ { name: "잠만보", price: 100 }, { name: "기출 마스터", price: 300 }, { name: "오답의 신", price: 500 }, { name: "수능 정복자", price: 1000 }, { name: "의대생 포스", price: 2000 } ];
+    const DEFAULT_PRE_ITEMS = [
+        "휴대폰 비행기모드로 전환",
+        "복잡한 생각은 메모해두고 판단 보류하기",
+        "지쳤다면 -> 15분 산책하기",
+        "머리가 안 돌아가면 -> 5분간 벽 보고 멍때리기"
+    ];
+
+    let state = {
+        lv: 1, exp: 0, coins: 0, streak: 0, lastDate: null, lastResetDate: null,
+        title: "초보 수험생", ownedTitles: ["초보 수험생"],
+        quests: [], history: [],
+        stats: { "국어": 0, "수학": 0, "영어": 0, "생명": 0, "지구": 0 },
+        insights: [], mockExams: [],
+        mindset: {
+            mantra: "오늘도 나 자신을 믿고 몰입하자!",
+            memo: "",
+            checklist: DEFAULT_PRE_ITEMS.map((text, i) => ({ id: Date.now() + i, text, checked: false })),
+            isOpen: false
+        },
+        activeTimer: null // { questId, endAt }
+    };
+
+    let editingId = null;
+    let editingInsightId = null;
+    let isArchiveOpen = false;
+    let insightLimit = 20;
+    let draftTimeout = null;
+    let timerInterval = null;
+
+    /* --- E. 특수문자 이스케이프 함수 --- */
+    function escapeHtml(str) {
+        if (str === null || str === undefined) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    /* --- 날짜 처리 --- */
+    function formatDate(dateObj) {
+        const offset = dateObj.getTimezoneOffset() * 60000;
+        return new Date(dateObj.getTime() - offset).toISOString().split('T')[0];
+    }
+
+    function getTodayStr() {
+        return formatDate(new Date());
+    }
+
+    function getYesterdayStr() {
+        const d = new Date();
+        d.setDate(d.getDate() - 1);
+        return formatDate(d);
+    }
+
+    /* --- 초기화 및 동기화 --- */
+    function init() {
+        const saved = localStorage.getItem('csat_rpg_v2');
+        if (saved) {
+            try {
+                const parsed = JSON.parse(saved);
+                state = { ...state, ...parsed };
+                migrateData();
+            } catch (e) { console.error("Load Error", e); }
+        }
+        
+        handleDailyReset();
+        checkStreak();
+        renderAll();
+        checkReviewReminder();
+        
+        // 날짜 입력 기본값 설정
+        const mockDateEl = document.getElementById('mock-date');
+        if (mockDateEl) mockDateEl.value = getTodayStr();
+
+        // D. 노트 임시 저장 복원
+        const draft = localStorage.getItem('csat_rpg_v2_draft');
+        if (draft) {
+            const noteInput = document.getElementById('insight-text-input');
+            if (noteInput) noteInput.value = draft;
+        }
+
+        // C. 타이머 복원 및 초과 확인
+        checkTimerOnLoad();
+    }
+
+    function migrateData() {
+        let updated = false;
+        const today = getTodayStr();
+
+        if (!state.insights) { state.insights = []; updated = true; }
+        if (!state.mockExams) { state.mockExams = []; updated = true; }
+        if (!state.lastResetDate) { state.lastResetDate = today; updated = true; }
+        if (!state.mindset) {
+            state.mindset = {
+                mantra: "오늘도 나 자신을 믿고 몰입하자!",
+                memo: "",
+                checklist: DEFAULT_PRE_ITEMS.map((text, i) => ({ id: Date.now() + i, text, checked: false })),
+                isOpen: false
+            };
+            updated = true;
+        }
+        if (state.activeTimer === undefined) { state.activeTimer = null; updated = true; }
+
+        state.quests.forEach(q => {
+            if (!q.completionHistory) { q.completionHistory = []; updated = true; }
+            if (q.targetCount === undefined) { q.targetCount = 0; updated = true; }
+            if (q.dailyProgress === undefined) { q.dailyProgress = 0; updated = true; }
+            if (q.totalSolved === undefined) { q.totalSolved = 0; updated = true; }
+            if (q.progressDate === undefined) { q.progressDate = today; updated = true; }
+            if (q.archived === undefined) { q.archived = false; updated = true; }
+            if (q.archivedAt === undefined) { q.archivedAt = null; updated = true; }
+            if (q.timeLimitMin === undefined) { q.timeLimitMin = 0; updated = true; }
+        });
+
+        if (updated) save();
+    }
+
+    function handleDailyReset() {
+        const today = getTodayStr();
+        if (state.lastResetDate !== today) {
+            state.quests.forEach(q => {
+                q.dailyProgress = 0;
+                q.progressDate = today;
+            });
+            if (state.mindset && state.mindset.checklist) {
+                state.mindset.checklist.forEach(item => {
+                    item.checked = false;
+                });
+            }
+            state.lastResetDate = today;
+            save();
+            showToast("새로운 하루가 시작되었습니다! 진행도가 리셋됩니다.");
+        }
+    }
+
+    function save() { localStorage.setItem('csat_rpg_v2', JSON.stringify(state)); }
+
+    function isDoneToday(quest) { return quest.completionHistory && quest.completionHistory.includes(getTodayStr()); }
+
+    function showToast(msg) {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = 'toast'; toast.innerText = msg;
+        container.appendChild(toast);
+        setTimeout(() => toast.remove(), 2500);
+    }
+
+    function checkStreak() {
+        const today = getTodayStr();
+        if (state.lastDate === today) return;
+        
+        const yesterday = getYesterdayStr();
+        if (state.lastDate !== yesterday && state.lastDate !== null) {
+            state.streak = 0;
+        }
+    }
+
+    // --- C. 타이머 시스템 ---
+    function formatTimeRemain(ms) {
+        const totalSec = Math.max(0, Math.floor(ms / 1000));
+        const m = String(Math.floor(totalSec / 60)).padStart(2, '0');
+        const s = String(totalSec % 60).padStart(2, '0');
+        return `${m}:${s}`;
+    }
+
+    function checkTimerOnLoad() {
+        if (!state.activeTimer) return;
+        const remain = state.activeTimer.endAt - Date.now();
+        if (remain <= 0) {
+            const q = state.quests.find(x => x.id === state.activeTimer.questId);
+            const title = q ? q.title : "퀘스트";
+            alert(`⏰ [${title}] 제한 시간이 이미 종료되었습니다.`);
+            state.activeTimer = null;
+            save();
+        } else {
+            startTimerTick();
+        }
+    }
+
+    function startTimer(questId) {
+        const q = state.quests.find(x => x.id === questId);
+        if (!q || !q.timeLimitMin || q.timeLimitMin <= 0) return;
+        if (isDoneToday(q)) return;
+
+        if (state.activeTimer && state.activeTimer.questId !== questId) {
+            if (!confirm("진행 중인 타이머가 있습니다. 바꿀까요?")) return;
+            stopTimer(false);
+        }
+
+        state.activeTimer = {
+            questId,
+            endAt: Date.now() + (q.timeLimitMin * 60 * 1000)
+        };
+        save();
+        renderQuests();
+        startTimerTick();
+    }
+
+    function stopTimer(doRender = true) {
+        if (timerInterval) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
+        state.activeTimer = null;
+        save();
+        if (doRender) renderQuests();
+    }
+
+    function clearTimerIfMatching(questId) {
+        if (state.activeTimer && state.activeTimer.questId === questId) {
+            stopTimer(false);
+        }
+    }
+
+    function startTimerTick() {
+        if (timerInterval) clearInterval(timerInterval);
+        
+        function tick() {
+            if (!state.activeTimer) {
+                if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+                return;
+            }
+            const remain = state.activeTimer.endAt - Date.now();
+            const el = document.getElementById(`timer-display-${state.activeTimer.questId}`);
+            if (el) {
+                el.innerText = `⏱ ${formatTimeRemain(remain)}`;
+            }
+
+            if (remain <= 0) {
+                const targetQ = state.quests.find(q => q.id === state.activeTimer.questId);
+                const title = targetQ ? targetQ.title : "퀘스트";
+                stopTimer(true);
+                showToast(`⏰ [${title}] 제한 시간 종료!`);
+                if (navigator.vibrate) {
+                    try { navigator.vibrate([200, 100, 200]); } catch (e) {}
+                }
+                setTimeout(() => alert(`⏰ [${title}] 제한 시간 종료!`), 50);
+            }
+        }
+
+        tick();
+        timerInterval = setInterval(tick, 1000);
+    }
+
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible' && state.activeTimer) {
+            const remain = state.activeTimer.endAt - Date.now();
+            if (remain <= 0) {
+                const targetQ = state.quests.find(q => q.id === state.activeTimer.questId);
+                const title = targetQ ? targetQ.title : "퀘스트";
+                stopTimer(true);
+                showToast(`⏰ [${title}] 제한 시간 종료!`);
+                if (navigator.vibrate) {
+                    try { navigator.vibrate([200, 100, 200]); } catch (e) {}
+                }
+                setTimeout(() => alert(`⏰ [${title}] 제한 시간 종료!`), 50);
+            } else {
+                startTimerTick();
+            }
+        }
+    });
+
+    // --- 마음가짐 로직 ---
+    function toggleMindset() {
+        state.mindset.isOpen = !state.mindset.isOpen;
+        renderMindset();
+        save();
+    }
+
+    function renderMindset() {
+        const content = document.getElementById('mindset-content');
+        const arrow = document.getElementById('mindset-arrow');
+        const status = document.getElementById('mindset-status');
+        const checklistArea = document.getElementById('pre-checklist-area');
+        const mantraArea = document.getElementById('mantra-area');
+
+        if (state.mindset.isOpen) {
+            content.classList.add('active');
+            arrow.innerText = '▲';
+            status.innerText = '(접기)';
+        } else {
+            content.classList.remove('active');
+            arrow.innerText = '▼';
+            status.innerText = '(열기)';
+        }
+
+        mantraArea.innerText = state.mindset.mantra || '오늘의 다짐을 입력해주세요';
+        document.getElementById('mantra-input').value = state.mindset.mantra;
+        document.getElementById('mindset-memo').value = state.mindset.memo;
+
+        checklistArea.innerHTML = state.mindset.checklist.map(item => `
+            <div class="pre-check-item ${item.checked ? 'checked' : ''}">
+                <input type="checkbox" ${item.checked ? 'checked' : ''} onchange="togglePreItem(${item.id})">
+                <span onclick="editPreItem(${item.id})">${escapeHtml(item.text)}</span>
+                <button onclick="deletePreItem(${item.id})" style="background:none; color:var(--danger); font-size:1.2rem; padding:0 5px;">&times;</button>
+            </div>
+        `).join('');
+    }
+
+    function addPreItem() {
+        const input = document.getElementById('new-pre-item');
+        if (!input.value.trim()) return;
+        state.mindset.checklist.push({ id: Date.now(), text: input.value.trim(), checked: false });
+        input.value = "";
+        renderMindset(); save();
+    }
+
+    function togglePreItem(id) {
+        const item = state.mindset.checklist.find(i => i.id === id);
+        if (item) item.checked = !item.checked;
+        renderMindset(); save();
+    }
+
+    function deletePreItem(id) {
+        state.mindset.checklist = state.mindset.checklist.filter(i => i.id !== id);
+        renderMindset(); save();
+    }
+
+    function editPreItem(id) {
+        const item = state.mindset.checklist.find(i => i.id === id);
+        const newText = prompt("문구 수정:", item.text);
+        if (newText && newText.trim()) {
+            item.text = newText.trim();
+            renderMindset(); save();
+        }
+    }
+
+    function saveMindset() {
+        state.mindset.mantra = document.getElementById('mantra-input').value;
+        state.mindset.memo = document.getElementById('mindset-memo').value;
+        renderMindset(); save();
+    }
+
+    // --- 퀘스트 로직 ---
+    function addQuest() {
+        const input = document.getElementById('q-input');
+        if (!input.value.trim()) return;
+        const timeLimit = parseInt(document.getElementById('q-timelimit').value) || 0;
+        state.quests.push({
+            id: Date.now(),
+            title: input.value.trim(),
+            subject: document.getElementById('q-subject').value,
+            reward: parseInt(document.getElementById('q-diff').value),
+            completionHistory: [],
+            targetCount: parseInt(document.getElementById('q-target').value) || 0,
+            dailyProgress: 0,
+            totalSolved: 0,
+            progressDate: getTodayStr(),
+            archived: false,
+            archivedAt: null,
+            timeLimitMin: timeLimit > 0 ? timeLimit : 0
+        });
+        input.value = ""; 
+        document.getElementById('q-target').value = "";
+        document.getElementById('q-timelimit').value = "";
+        renderQuests(); save();
+    }
+
+    function incrementStamp(id) {
+        const q = state.quests.find(q => q.id === id);
+        if (!q || isDoneToday(q)) return;
+        const today = getTodayStr();
+        
+        if (q.progressDate !== today) { q.dailyProgress = 0; q.progressDate = today; }
+        
+        if (q.targetCount > 0 && q.dailyProgress < q.targetCount) {
+            q.dailyProgress++; q.totalSolved++;
+        } else if (q.targetCount === 0) {
+            q.totalSolved++;
+        }
+        renderQuests(); save();
+    }
+
+    function completeQuest(id) {
+        const q = state.quests.find(q => q.id === id);
+        if (!q || isDoneToday(q)) return;
+        if (q.targetCount > 0 && q.dailyProgress < q.targetCount) { alert("목표를 달성해야 완료할 수 있습니다!"); return; }
+        
+        clearTimerIfMatching(id);
+
+        const today = getTodayStr();
+        state.exp += q.reward; state.coins += Math.floor(q.reward/2);
+        state.stats[q.subject] = (state.stats[q.subject] || 0) + 1;
+        q.completionHistory.push(today);
+        state.history.unshift({ date: today, title: q.title, subject: q.subject });
+        
+        if (state.lastDate !== today) { state.streak++; state.lastDate = today; state.exp += 10; }
+        while (state.exp >= state.lv * 100) { 
+            state.exp -= (state.lv * 100); 
+            state.lv++; 
+            alert(`🎉 Level Up! Lv.${state.lv} 달성!`); 
+        }
+        
+        renderAll(); save();
+        showToast("퀘스트 완료! 성장하셨습니다.");
+    }
+
+    /* --- A. 퀘스트 보관함 로직 --- */
+    function archiveQuest(id) {
+        const q = state.quests.find(x => x.id === id);
+        if (!q) return;
+        clearTimerIfMatching(id);
+        q.archived = true;
+        q.archivedAt = getTodayStr();
+        renderQuests();
+        save();
+        showToast("퀘스트가 보관함으로 이동되었습니다.");
+    }
+
+    function unarchiveQuest(id) {
+        const q = state.quests.find(x => x.id === id);
+        if (!q) return;
+        q.archived = false;
+        q.dailyProgress = 0;
+        q.progressDate = getTodayStr();
+        renderQuests();
+        save();
+        showToast("보관함에서 퀘스트를 꺼냈습니다.");
+    }
+
+    function toggleArchive() {
+        isArchiveOpen = !isArchiveOpen;
+        renderArchive();
+    }
+
+    function renderArchive() {
+        const list = document.getElementById('archive-list');
+        const arrow = document.getElementById('archive-arrow');
+        const countSpan = document.getElementById('archive-count');
+        const archivedQuests = state.quests.filter(q => q.archived);
+
+        countSpan.innerText = archivedQuests.length;
+
+        if (isArchiveOpen) {
+            list.style.display = 'block';
+            arrow.innerText = '▲';
+        } else {
+            list.style.display = 'none';
+            arrow.innerText = '▼';
+            return;
+        }
+
+        if (archivedQuests.length === 0) {
+            list.innerHTML = `<div style="text-align:center; padding:20px; color:var(--gray); font-size:0.85rem; background:white; border-radius:12px;">보관된 퀘스트가 없습니다.</div>`;
+            return;
+        }
+
+        list.innerHTML = archivedQuests.map(q => `
+            <div class="quest-card" style="padding: 14px; opacity: 0.9;">
+                <div class="quest-header">
+                    <span class="subject-tag" style="background:${SUBJECT_COLORS[q.subject]}">${escapeHtml(q.subject)}</span>
+                    <span class="quest-meta">${q.archivedAt ? q.archivedAt + ' 보관' : ''}</span>
+                </div>
+                <div class="quest-title">${escapeHtml(q.title)}</div>
+                <div class="quest-meta" style="margin-bottom:8px;">📉 누적 풀이: 총 ${q.totalSolved}문제</div>
+                <div style="display:flex; gap:8px; justify-content:flex-end;">
+                    <button class="btn-sm btn-save" onclick="unarchiveQuest(${q.id})">꺼내기</button>
+                    <button class="btn-sm btn-del" onclick="deleteQuest(${q.id})">삭제</button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function renderQuests() {
+        const list = document.getElementById('quest-list');
+        const sortBy = document.getElementById('sort-select').value;
+
+        // 메인 목록에는 보관되지 않은 퀘스트만 정렬 및 표시
+        let displayQuests = state.quests.filter(q => !q.archived);
+        displayQuests.sort((a, b) => {
+            const doneA = isDoneToday(a); const doneB = isDoneToday(b);
+            if (sortBy === 'default') return (doneA === doneB) ? b.id - a.id : (doneA ? 1 : -1);
+            if (sortBy === 'newest') return b.id - a.id;
+            if (sortBy === 'title') return a.title.localeCompare(b.title);
+            if (sortBy === 'subject') return a.subject.localeCompare(b.subject);
+            return 0;
+        });
+
+        list.innerHTML = displayQuests.map(q => {
+            const doneToday = isDoneToday(q);
+            if (editingId === q.id) {
+                return `<div class="quest-card"><div class="edit-form">
+                    <input type="text" id="edit-title-${q.id}" value="${escapeHtml(q.title)}">
+                    <div style="display:flex; gap:5px;">
+                        <select id="edit-sub-${q.id}" style="flex:1;">
+                            ${["국어","수학","영어","생명","지구"].map(s => `<option value="${s}" ${q.subject===s?'selected':''}>${s}</option>`).join('')}
+                        </select>
+                        <select id="edit-rew-${q.id}" style="flex:1;">
+                            <option value="40" ${q.reward===40?'selected':''}>A(40)</option>
+                            <option value="20" ${q.reward===20?'selected':''}>B(20)</option>
+                            <option value="10" ${q.reward===10?'selected':''}>C(10)</option>
+                        </select>
+                    </div>
+                    <input type="number" id="edit-target-${q.id}" value="${q.targetCount || ''}" placeholder="목표 수">
+                    <input type="number" id="edit-timelimit-${q.id}" value="${q.timeLimitMin || ''}" placeholder="제한 시간(분, 선택사항)">
+                    <div style="display:flex; gap:8px; justify-content:flex-end;">
+                        <button class="btn-sm btn-save" onclick="saveEdit(${q.id})">저장</button>
+                        <button class="btn-sm btn-cancel" onclick="cancelEdit()">취소</button>
+                    </div>
+                </div></div>`;
+            }
+
+            const stamps = [];
+            if (q.targetCount > 0) {
+                for (let i = 0; i < q.targetCount; i++) {
+                    stamps.push(`<div class="stamp ${i < q.dailyProgress ? 'filled' : ''}" style="background:${i < q.dailyProgress ? SUBJECT_COLORS[q.subject] : 'transparent'}"></div>`);
+                }
+            }
+
+            // C. 타이머 UI 구성
+            let timerHtml = '';
+            if (q.timeLimitMin && q.timeLimitMin > 0) {
+                const isRunning = state.activeTimer && state.activeTimer.questId === q.id;
+                let timeStr = `${q.timeLimitMin}분`;
+                if (isRunning) {
+                    const remain = state.activeTimer.endAt - Date.now();
+                    timeStr = formatTimeRemain(remain);
+                }
+
+                timerHtml = `
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px; padding-top:8px; border-top:1px dashed #edf2f7; font-size:0.85rem;">
+                    <span id="timer-display-${q.id}" style="font-weight:bold; color:${isRunning ? 'var(--danger)' : 'var(--text)'};">⏱ ${timeStr}</span>
+                    ${isRunning 
+                        ? `<button class="btn-sm btn-del" style="padding:4px 10px; font-size:0.75rem;" onclick="stopTimer()">중지</button>`
+                        : `<button class="btn-sm btn-edit" style="padding:4px 10px; font-size:0.75rem;" onclick="startTimer(${q.id})" ${doneToday ? 'disabled' : ''}>시작</button>`
+                    }
+                </div>`;
+            }
+
+            return `
+            <div class="quest-card ${doneToday ? 'completed-today' : ''}">
+                <div class="quest-header">
+                    <span class="subject-tag" style="background:${SUBJECT_COLORS[q.subject]}">${escapeHtml(q.subject)}</span>
+                    ${doneToday ? '<span style="color:var(--success); font-size:0.8rem; font-weight:bold;">✅ 오늘 달성</span>' : ''}
+                </div>
+                <div class="quest-title">${escapeHtml(q.title)}</div>
+                <div class="quest-meta">보상: ${q.reward}XP / 💰 ${Math.floor(q.reward/2)}</div>
+                <div class="progress-section" style="opacity:${doneToday ? 0.6 : 1}">
+                    <div class="progress-header">
+                        <span>오늘 진행: ${q.dailyProgress} / ${q.targetCount || '-'}</span>
+                        <button class="btn-stamp" onclick="incrementStamp(${q.id})" ${doneToday || (q.targetCount > 0 && q.dailyProgress >= q.targetCount) ? 'disabled' : ''}>+1 문제</button>
+                    </div>
+                    <div class="stamp-grid">${stamps.join('')}</div>
+                    <div class="total-solved">📉 누적 풀이: 총 ${q.totalSolved}문제</div>
+                    ${timerHtml}
+                </div>
+                <div style="display:flex; gap:8px; justify-content:flex-end;">
+                    <button class="btn-sm btn-complete" onclick="completeQuest(${q.id})" ${doneToday || (q.targetCount > 0 && q.dailyProgress < q.targetCount) ? 'disabled' : ''}>완료</button>
+                    <button class="btn-sm btn-edit" onclick="startEdit(${q.id})">수정</button>
+                    <button class="btn-sm btn-archive" onclick="archiveQuest(${q.id})">보관</button>
+                    <button class="btn-sm btn-del" onclick="deleteQuest(${q.id})">삭제</button>
+                </div>
+            </div>`;
+        }).join('');
+
+        renderArchive();
+    }
+
+    function startEdit(id) { editingId = id; renderQuests(); }
+    function cancelEdit() { editingId = null; renderQuests(); }
+    function saveEdit(id) {
+        const q = state.quests.find(q => q.id === id);
+        const titleVal = document.getElementById(`edit-title-${id}`).value.trim();
+        if (!titleVal) { alert("퀘스트 제목을 입력하세요."); return; }
+        q.title = titleVal;
+        q.subject = document.getElementById(`edit-sub-${id}`).value;
+        q.reward = parseInt(document.getElementById(`edit-rew-${id}`).value);
+        q.targetCount = parseInt(document.getElementById(`edit-target-${id}`).value) || 0;
+        const timeLimit = parseInt(document.getElementById(`edit-timelimit-${id}`).value) || 0;
+        q.timeLimitMin = timeLimit > 0 ? timeLimit : 0;
+        editingId = null; renderQuests(); save();
+    }
+    function deleteQuest(id) { 
+        if (confirm("삭제하시겠습니까?")) { 
+            clearTimerIfMatching(id);
+            state.quests = state.quests.filter(q => q.id !== id); 
+            renderQuests(); save(); 
+        } 
+    }
+
+    // --- D. 깨달음 노트 입력 디바운스 & 임시저장 ---
+    function handleInsightInput() {
+        clearTimeout(draftTimeout);
+        draftTimeout = setTimeout(() => {
+            const val = document.getElementById('insight-text-input').value;
+            localStorage.setItem('csat_rpg_v2_draft', val);
+        }, 500);
+    }
+
+    function handleInsightFilterChange() {
+        insightLimit = 20;
+        renderInsights();
+    }
+
+    function loadMoreInsights() {
+        insightLimit += 20;
+        renderInsights();
+    }
+
+    // --- 깨달음 노트 로직 ---
+    function addInsight() {
+        const text = document.getElementById('insight-text-input').value.trim();
+        if (!text) return;
+        state.insights.push({ 
+            id: Date.now(), 
+            subject: document.getElementById('insight-subject-input').value, 
+            text, 
+            createdAt: getTodayStr(),
+            weeklyReviewedAt: null
+        });
+        document.getElementById('insight-text-input').value = "";
+        localStorage.removeItem('csat_rpg_v2_draft');
+        renderInsights(); save(); showToast("기록되었습니다.");
+    }
+
+    function renderInsights() {
+        const list = document.getElementById('insight-list');
+        const filterSub = document.getElementById('insight-filter-subject').value;
+        const moreBtnContainer = document.getElementById('insight-more-container');
+
+        let filtered = [...state.insights].sort((a, b) => b.id - a.id);
+        if (filterSub !== "전체") filtered = filtered.filter(i => i.subject === filterSub);
+
+        if (filtered.length === 0) {
+            list.innerHTML = `<div style="text-align:center; padding:40px; color:var(--gray); font-size:0.9rem;">아직 기록이 없습니다.</div>`;
+            moreBtnContainer.style.display = 'none';
+            return;
+        }
+
+        const visibleItems = filtered.slice(0, insightLimit);
+        moreBtnContainer.style.display = (filtered.length > insightLimit) ? 'block' : 'none';
+
+        list.innerHTML = visibleItems.map(i => {
+            // B. 노트 인라인 수정 폼
+            if (editingInsightId === i.id) {
+                return `
+                <div class="insight-card">
+                    <div class="edit-form" style="padding:0; box-shadow:none; margin:0;">
+                        <select id="edit-insight-sub-${i.id}">
+                            ${["국어","수학","영어","생명","지구"].map(s => `<option value="${s}" ${i.subject===s?'selected':''}>${s}</option>`).join('')}
+                        </select>
+                        <textarea id="edit-insight-text-${i.id}" rows="3">${escapeHtml(i.text)}</textarea>
+                        <div style="display:flex; gap:8px; justify-content:flex-end;">
+                            <button class="btn-sm btn-save" onclick="saveEditInsight(${i.id})">저장</button>
+                            <button class="btn-sm btn-cancel" onclick="cancelEditInsight()">취소</button>
+                        </div>
+                    </div>
+                </div>`;
+            }
+
+            return `
+            <div class="insight-card">
+                <div class="insight-header">
+                    <span class="subject-tag" style="background:${SUBJECT_COLORS[i.subject]}">${escapeHtml(i.subject)}</span>
+                    <span class="insight-meta">${escapeHtml(i.createdAt)}</span>
+                </div>
+                <div style="font-size:0.95rem; line-height:1.6; white-space:pre-wrap; word-break:break-all;">${escapeHtml(i.text)}</div>
+                <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:10px;">
+                    <button class="btn-sm btn-edit" onclick="startEditInsight(${i.id})">수정</button>
+                    <button class="btn-sm btn-del" onclick="deleteInsight(${i.id})">삭제</button>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    function startEditInsight(id) { editingInsightId = id; renderInsights(); }
+    function cancelEditInsight() { editingInsightId = null; renderInsights(); }
+    function saveEditInsight(id) {
+        const item = state.insights.find(i => i.id === id);
+        const newText = document.getElementById(`edit-insight-text-${id}`).value.trim();
+        if (!newText) { alert("내용을 입력하세요."); return; }
+        item.subject = document.getElementById(`edit-insight-sub-${id}`).value;
+        item.text = newText;
+        editingInsightId = null;
+        renderInsights();
+        save();
+        showToast("노트가 수정되었습니다.");
+    }
+    function deleteInsight(id) { 
+        if (confirm("삭제하시겠습니까?")) { 
+            state.insights = state.insights.filter(i => i.id !== id); 
+            renderInsights(); save(); 
+        } 
+    }
+
+    /* --- 모의고사 기록 로직 --- */
+    function addMockExam() {
+        const name = document.getElementById('mock-name').value.trim();
+        const date = document.getElementById('mock-date').value;
+        const score = document.getElementById('mock-score').value;
+        const review = document.getElementById('mock-review').value.trim();
+        
+        if (!name) { alert("모의고사 이름을 입력하세요."); return; }
+        
+        state.mockExams.push({
+            id: Date.now(),
+            name, date, score, review,
+            createdAt: getTodayStr()
+        });
+        
+        document.getElementById('mock-name').value = "";
+        document.getElementById('mock-score').value = "";
+        document.getElementById('mock-review').value = "";
+        
+        renderMockExams(); save(); showToast("기록되었습니다.");
+    }
+
+    function renderMockExams() {
+        const list = document.getElementById('mock-list');
+        let filtered = [...state.mockExams].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        if (filtered.length === 0) {
+            list.innerHTML = `<div style="text-align:center; padding:40px; color:var(--gray); font-size:0.9rem;">기록된 모의고사가 없습니다.</div>`;
+            return;
+        }
+
+        list.innerHTML = filtered.map(m => `
+            <div class="mock-card">
+                <div class="mock-header">
+                    <div style="display:flex; flex-direction:column;">
+                        <span style="font-weight:bold; font-size:1rem; color:var(--text); word-break:break-all;">${escapeHtml(m.name)}</span>
+                        <span class="mock-meta">${escapeHtml(m.date)}</span>
+                    </div>
+                    <div style="text-align:right;">
+                        <span style="font-size:1.1rem; font-weight:bold; color:var(--primary);">${m.score ? escapeHtml(m.score) + '점' : '기록없음'}</span>
+                    </div>
+                </div>
+                <div style="font-size:0.9rem; line-height:1.5; white-space:pre-wrap; margin-top:10px; color:#555; background:#f9f9f9; padding:12px; border-radius:10px; word-break:break-all;">${escapeHtml(m.review || '총평 없음')}</div>
+                <div style="display:flex; justify-content:flex-end; margin-top:12px;">
+                    <button class="btn-sm btn-del" onclick="deleteMock(${m.id})">삭제</button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function deleteMock(id) { if(confirm("기록을 삭제하시겠습니까?")) { state.mockExams = state.mockExams.filter(m => m.id !== id); renderMockExams(); save(); } }
+
+    // --- 복습 및 모달 ---
+    function checkReviewReminder() {
+        const today = getTodayStr();
+        const d = new Date();
+        if (d.getDay() === 0) {
+            const weekly = state.insights.filter(i => !i.weeklyReviewedAt);
+            if (weekly.length > 0) openReviewModal(weekly, today);
+        }
+    }
+    function openReviewModal(weekly, today) {
+        const body = document.getElementById('modal-body');
+        body.innerHTML = `<div class="modal-header">일요일 주간 복습</div>` + 
+            weekly.map(i => `<div style="margin-bottom:10px; padding:10px; background:#f8f9fa; border-radius:8px; word-break:break-all;"><b>[${escapeHtml(i.subject)}]</b> ${escapeHtml(i.text)}</div>`).join('');
+        document.getElementById('modal-overlay').style.display = 'flex';
+        document.getElementById('modal-complete-btn').onclick = () => {
+            weekly.forEach(i => i.weeklyReviewedAt = today);
+            save(); closeReviewModal(); showToast("복습 완료!");
+        };
+    }
+    function openWeeklyReview(force = false) {
+        const weekly = state.insights;
+        openReviewModal(weekly, getTodayStr());
+    }
+    function closeReviewModal() { document.getElementById('modal-overlay').style.display = 'none'; }
+
+    // --- 통계/상점 UI ---
+    function renderShop() {
+        const list = document.getElementById('shop-list');
+        list.innerHTML = SHOP_ITEMS.map(item => {
+            const isOwned = state.ownedTitles.includes(item.name);
+            return `<div class="shop-item">
+                <div><div style="font-weight:bold;">${escapeHtml(item.name)}</div><div style="font-size:0.8rem; color:#888;">💰 ${item.price}</div></div>
+                <button class="btn-sm btn-save" style="background:${isOwned ? 'var(--success)' : 'var(--primary)'}" onclick="buyTitle('${escapeHtml(item.name)}', ${item.price})">
+                    ${isOwned ? (state.title === item.name ? '장착됨' : '장착하기') : '구매하기'}
+                </button>
+            </div>`;
+        }).join('');
+    }
+
+    function buyTitle(name, price) {
+        if (state.ownedTitles.includes(name)) state.title = name;
+        else if (state.coins >= price) { state.coins -= price; state.ownedTitles.push(name); state.title = name; }
+        else { alert("코인이 부족합니다!"); return; }
+        renderAll(); save();
+    }
+
+    function renderStats() {
+        const container = document.getElementById('stat-bars');
+        const maxVal = Math.max(...Object.values(state.stats), 1);
+        container.innerHTML = ["국어", "수학", "영어", "생명", "지구"].map(sub => {
+            const val = state.stats[sub] || 0;
+            return `<div class="stat-bar-row">
+                <div class="stat-label"><span>${sub}</span><span>${val}회</span></div>
+                <div class="stat-bar-bg"><div class="stat-bar-fill" style="width:${(val/maxVal)*100}%; background:${SUBJECT_COLORS[sub]}"></div></div>
+            </div>`;
+        }).join('');
+        document.getElementById('history-list').innerHTML = state.history.slice(0, 10).map(h => `<div style="font-size:0.85rem; margin-bottom:5px; word-break:break-all;"><small style="color:#888;">${escapeHtml(h.date)}</small> [${escapeHtml(h.subject)}] ${escapeHtml(h.title)}</div>`).join('');
+    }
+
+    function renderAll() {
+        document.getElementById('lv-display').innerText = state.lv;
+        document.getElementById('current-title').innerText = state.title;
+        document.getElementById('coin-display').innerText = state.coins;
+        document.getElementById('streak-display').innerText = `🔥 ${state.streak}일째`;
+        const reqExp = state.lv * 100;
+        document.getElementById('exp-text').innerText = `${state.exp}/${reqExp}`;
+        document.getElementById('exp-bar').style.width = `${Math.min(100, (state.exp/reqExp)*100)}%`;
+        renderQuests(); renderMindset(); renderInsights(); renderMockExams(); renderShop(); renderStats();
+    }
+
+    function showTab(tabName) {
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(`tab-${tabName}`).classList.add('active');
+        document.getElementById(`nav-${tabName}`).classList.add('active');
+        document.getElementById('mindset-panel-root').style.display = (tabName === 'quests') ? 'block' : 'none';
+        if (tabName === 'mock') renderMockExams();
+        if (tabName === 'notes') renderInsights();
+    }
+
+    function exportData() {
+        const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(JSON.stringify(state));
+        const link = document.createElement('a'); link.setAttribute('href', dataUri);
+        link.setAttribute('download', `csat_rpg_v26_${getTodayStr()}.json`); link.click();
+    }
+    function importData() { document.getElementById('import-file').click(); }
+    document.getElementById('import-file').addEventListener('change', function(e) {
+        const reader = new FileReader();
+        reader.onload = function(e) { 
+            try { 
+                state = JSON.parse(e.target.result); 
+                migrateData(); 
+                renderAll(); 
+                save(); 
+                alert("복원 완료"); 
+            } catch (err) { alert("파일 오류"); } 
+        };
+        reader.readAsText(e.target.files[0]);
+    });
+    function resetGame() { if(confirm("초기화하시겠습니까?")) { localStorage.removeItem('csat_rpg_v2'); localStorage.removeItem('csat_rpg_v2_draft'); location.reload(); } }
+
+    init();
+</script>
+
+
+</body></html>
